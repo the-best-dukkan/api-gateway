@@ -40,14 +40,7 @@ public class OAuth2LoginSuccessHandler implements ServerAuthenticationSuccessHan
                     String refreshToken = TbdJWTUtil.generateRefreshToken(jwtConfig, userInternal.sub());
 
                     // 1. Set Refresh Token as an HttpOnly Cookie
-                    ResponseCookie refreshCookie = ResponseCookie.from(Constants.REFRESH_TOKEN, refreshToken)
-                            .httpOnly(true)
-                            .secure(true) // Only sent over HTTPS
-                            .path("/")
-                            .maxAge(Duration.ofDays(jwtConfig.getRefreshTokenExpiryInDays()))
-                            .sameSite("Strict")
-                            .build();
-
+                    ResponseCookie refreshCookie = getRefreshTokenCookie(refreshToken);
                     exchange.getResponse().addCookie(refreshCookie);
 
                     String redirectUrl = "http://localhost:4200/login-success#token=" + accessToken;
@@ -61,6 +54,16 @@ public class OAuth2LoginSuccessHandler implements ServerAuthenticationSuccessHan
                     log.error("Sync failed after all service-level retries: {}", ex.getMessage());
                     return redirectToErrorPage(exchange);
                 });
+    }
+
+    private ResponseCookie getRefreshTokenCookie(String refreshToken) {
+        return ResponseCookie.from(Constants.REFRESH_TOKEN, refreshToken)
+                .httpOnly(true)
+                .secure(true) // Only sent over HTTPS
+                .path("/")
+                .maxAge(Duration.ofDays(jwtConfig.getRefreshTokenExpiryInDays()))
+                .sameSite("Strict")
+                .build();
     }
 
     private Mono<Void> redirectToErrorPage(ServerWebExchange exchange) {
