@@ -1,9 +1,9 @@
 package com.tbd.api_gateway.security;
 
 import com.tbd.api_gateway.config.JWTConfig;
-import com.tbd.api_gateway.constant.Constants;
-import com.tbd.api_gateway.security.jwt.TbdJWTUtil;
 import com.tbd.api_gateway.service.UserSyncService;
+import com.tbd.api_gateway.util.TbdJWTUtil;
+import com.tbd.api_gateway.util.Util;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,7 +17,6 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.time.Duration;
 
 @Component
 @RequiredArgsConstructor
@@ -37,13 +36,16 @@ public class OAuth2LoginSuccessHandler implements ServerAuthenticationSuccessHan
                 .flatMap(userInternal -> {
 
                     String accessToken = TbdJWTUtil.generateAccessToken(jwtConfig, userInternal);
-                    String refreshToken = TbdJWTUtil.generateRefreshToken(jwtConfig, userInternal.sub());
+                    String refreshToken = TbdJWTUtil.generateRefreshToken(jwtConfig, userInternal);
 
-                    // 1. Set Refresh Token as an HttpOnly Cookie
-                    ResponseCookie refreshCookie = getRefreshTokenCookie(refreshToken);
+                    // 1. Set Access token and Refresh Token as an HttpOnly Cookie
+                    ResponseCookie accessCookie = Util.getAccessTokenCookie(jwtConfig, accessToken);
+                    ResponseCookie refreshCookie = Util.getRefreshTokenCookie(jwtConfig, refreshToken);
+
+                    exchange.getResponse().addCookie(accessCookie);
                     exchange.getResponse().addCookie(refreshCookie);
 
-                    String redirectUrl = "http://localhost:4200/login-success#token=" + accessToken;
+                    String redirectUrl = "http://localhost:4200/login-success";
 
                     exchange.getResponse().setStatusCode(HttpStatus.FOUND);
                     exchange.getResponse().getHeaders().setLocation(URI.create(redirectUrl));
@@ -54,16 +56,6 @@ public class OAuth2LoginSuccessHandler implements ServerAuthenticationSuccessHan
                     log.error("Sync failed after all service-level retries: {}", ex.getMessage());
                     return redirectToErrorPage(exchange);
                 });
-    }
-
-    private ResponseCookie getRefreshTokenCookie(String refreshToken) {
-        return ResponseCookie.from(Constants.REFRESH_TOKEN, refreshToken)
-                .httpOnly(true)
-                .secure(true) // Only sent over HTTPS
-                .path("/")
-                .maxAge(Duration.ofDays(jwtConfig.getRefreshTokenExpiryInDays()))
-                .sameSite("Strict")
-                .build();
     }
 
     private Mono<Void> redirectToErrorPage(ServerWebExchange exchange) {
