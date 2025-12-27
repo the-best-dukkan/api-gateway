@@ -1,9 +1,8 @@
 package com.tbd.api_gateway.security;
 
 import com.tbd.api_gateway.config.JWTConfig;
-import com.tbd.api_gateway.constant.Constants;
-import com.tbd.api_gateway.util.TbdJWTUtil;
 import com.tbd.api_gateway.service.UserSyncService;
+import com.tbd.api_gateway.util.TbdJWTUtil;
 import com.tbd.api_gateway.util.Util;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +17,6 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.time.Duration;
 
 @Component
 @RequiredArgsConstructor
