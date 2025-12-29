@@ -30,6 +30,14 @@ spring:
               uri: lb://tbd-user-service
               predicates:
                 - Path=/tbd/api/users/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 5             # How many tokens come back per second
+                    redis-rate-limiter.burstCapacity: 20            # Max tokens stored
+                    redis-rate-limiter.requestedTokens: 1           # Tokens per request
+                    key-resolver: "#{@commonApiKeyResolver}"        # Who is being limited
+                    # “User can request 20 times at once, then 5 per second.”
 server:
   port: 2030
 
