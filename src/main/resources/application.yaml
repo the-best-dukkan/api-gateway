@@ -30,6 +30,29 @@ spring:
               uri: lb://tbd-user-service
               predicates:
                 - Path=/tbd/api/users/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 5             # How many tokens come back per second
+                    redis-rate-limiter.burstCapacity: 20            # Max tokens stored
+                    redis-rate-limiter.requestedTokens: 1           # Tokens per request
+                    key-resolver: "#{@commonApiKeyResolver}"        # Who is being limited
+                    # “User can request 20 times at once, then 5 per second.”
+#            - id: auth-refresh-route # NOT WORKING NOW
+#              uri: no-op://true  # no forwarding
+#              order: -200
+#              predicates:
+#                - Path=/tbd/auth/refresh
+#                - Method=POST
+#              filters:
+#                - name: RequestRateLimiter
+#                  args:
+#                    redis-rate-limiter.replenishRate: 1           # How many tokens come back per second
+#                    redis-rate-limiter.burstCapacity: 2           # Max tokens stored
+#                    redis-rate-limiter.requestedTokens: 1         # Tokens per request
+#                    key-resolver: "#{@refreshTokenKeyResolver}"   # Who is being limited
+#                    # “User can refresh token 2 times at once, then 1 per second.”
+#                - RefreshToken
 server:
   port: 2030
 

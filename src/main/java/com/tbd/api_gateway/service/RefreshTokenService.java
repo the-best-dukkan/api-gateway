@@ -1,6 +1,7 @@
 package com.tbd.api_gateway.service;
 
 import com.tbd.api_gateway.config.JWTConfig;
+import com.tbd.api_gateway.constant.Constants;
 import com.tbd.api_gateway.model.RefreshTokenMetadata;
 import com.tbd.api_gateway.model.TokenPair;
 import com.tbd.api_gateway.model.UserSyncResponse;
@@ -31,6 +32,10 @@ public class RefreshTokenService {
         } catch (ExpiredJwtException e) {
             return Mono.error(new SecurityException("Token has expired"));
         } catch (JwtException e) {
+            return Mono.error(new SecurityException("Invalid token"));
+        }
+
+        if (refreshTokenMetadata.getTokenType().equals(Constants.ACCESS_TOKEN)) {
             return Mono.error(new SecurityException("Invalid token"));
         }
 

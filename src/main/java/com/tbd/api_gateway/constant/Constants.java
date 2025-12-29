@@ -10,5 +10,6 @@ public class Constants {
 
     public static final String EMAIL = "email";
     public static final String ROLES = "roles";
-    public static final String NAME = "name";
+    public static final String X_USER_ID = "X-User-Id";
+    public static final String TOKEN_TYPE = "token_type";
 }

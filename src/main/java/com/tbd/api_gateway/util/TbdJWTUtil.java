@@ -6,10 +6,10 @@ import com.tbd.api_gateway.model.RefreshTokenMetadata;
 import com.tbd.api_gateway.model.TbdRole;
 import com.tbd.api_gateway.model.UserSyncResponse;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -21,22 +21,54 @@ public class TbdJWTUtil {
     private TbdJWTUtil() {
     }
 
+    private static SecretKey getSigningKey(String secret) {
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    private static HashMap<String, Object> getCommonClaims(UserSyncResponse userSyncResponse) {
+        HashMap<String, Object> claims = new HashMap<>();
+        claims.put(Constants.EMAIL, userSyncResponse.email());
+        claims.put(Constants.ROLES, userSyncResponse.roles().stream().map(TbdRole::name).toList());
+        return claims;
+    }
+
     public static String generateAccessToken(JWTConfig jwtConfig, UserSyncResponse userSyncResponse) {
 
-        JwtBuilder jwtBuilder = getJWTBuilderWithCommonValues(jwtConfig, userSyncResponse, false);
+        SecretKey key = getSigningKey(jwtConfig.getSecret());
 
-        return jwtBuilder
-                .signWith(Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8)))
+        Map<String, Object> claims = getCommonClaims(userSyncResponse);
+        claims.put(Constants.TOKEN_TYPE, Constants.ACCESS_TOKEN);
+
+        Instant now = Instant.now();
+
+        return Jwts.builder()
+                .issuer(jwtConfig.getIssuer())
+                .subject(userSyncResponse.sub())
+                .claims(claims)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(Instant.now().plus(Duration.ofMinutes(jwtConfig.getAccessTokenExpiryInMinutes()))))
+                .signWith(key)
                 .compact();
     }
 
     public static String generateRefreshToken(JWTConfig jwtConfig, UserSyncResponse userSyncResponse) {
 
-        JwtBuilder jwtBuilder = getJWTBuilderWithCommonValues(jwtConfig, userSyncResponse, true);
+        SecretKey key = getSigningKey(jwtConfig.getSecret());
 
-        return jwtBuilder
+        Map<String, Object> claims = getCommonClaims(userSyncResponse);
+        claims.put(Constants.TOKEN_TYPE, Constants.REFRESH_TOKEN);
+
+        Instant now = Instant.now();
+
+        return Jwts.builder()
                 .id(UUID.randomUUID().toString())
-                .signWith(Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8)))
+                .issuer(jwtConfig.getIssuer())
+                .subject(userSyncResponse.sub())
+                .claims(claims)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(Instant.now().plus(Duration.ofDays(jwtConfig.getRefreshTokenExpiryInDays()))))
+                .signWith(key)
                 .compact();
     }
 
@@ -45,6 +77,7 @@ public class TbdJWTUtil {
         // 1. Parse and Validate (Throws exception if expired or signature invalid)
         Claims claims = Jwts.parser()
                 .verifyWith(Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8))) // The same signing key used to generate it
+                .requireIssuer(jwtConfig.getIssuer())
                 .build()
                 .parseSignedClaims(refreshToken)
                 .getPayload();
@@ -56,31 +89,8 @@ public class TbdJWTUtil {
                 claims.get(Constants.EMAIL, String.class),
                 roles.stream().map(TbdRole::new).collect(Collectors.toSet()),
                 claims.getId(),
-                claims.getExpiration()
+                claims.getExpiration(),
+                claims.get(Constants.TOKEN_TYPE, String.class)
         );
-    }
-
-    private static JwtBuilder getJWTBuilderWithCommonValues(JWTConfig jwtConfig, UserSyncResponse userSyncResponse, boolean isRefreshToken) {
-
-        Instant now = Instant.now();
-
-        Map<String, Object> claims = new HashMap<>();
-        claims.put(Constants.EMAIL, userSyncResponse.email());
-        claims.put(Constants.ROLES, userSyncResponse.roles().stream().map(TbdRole::name).toList());
-
-        Duration durationToAdd;
-
-        if (isRefreshToken) {
-            durationToAdd = Duration.ofDays(jwtConfig.getRefreshTokenExpiryInDays());
-        } else {
-            durationToAdd = Duration.ofMinutes(jwtConfig.getAccessTokenExpiryInMinutes());
-        }
-
-        return Jwts.builder()
-                .issuer(jwtConfig.getIssuer())
-                .subject(userSyncResponse.sub())
-                .issuedAt(Date.from(now))
-                .claims(claims)
-                .expiration(Date.from(now.plus(durationToAdd)));
     }
 }

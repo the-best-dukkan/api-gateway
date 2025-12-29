@@ -17,4 +17,5 @@ public class RefreshTokenMetadata {
     private Set<TbdRole> roles;
     private String jti;
     private Date expiration;
+    private String tokenType;
 }
