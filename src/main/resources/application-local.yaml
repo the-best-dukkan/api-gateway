@@ -38,6 +38,9 @@ spring:
                     redis-rate-limiter.requestedTokens: 1           # Tokens per request
                     key-resolver: "#{@commonApiKeyResolver}"        # Who is being limited
                     # “User can request 20 times at once, then 5 per second.”
+          default-filters:
+            - RemoveRequestHeader=X-Internal-Secret
+            - AddRequestHeader=X-Internal-Secret, ${TBD_INTERNAL_SECRET:default-local-secret}
 server:
   port: 2030
 
@@ -60,6 +63,9 @@ app:
     issuer: 'the-best-dukkan'
     accessTokenExpiryInMinutes: 15
     refreshTokenExpiryInDays: 7
+  api:
+    endpoint:
+      secret: ${API_SECRET:this-is-secret-for-testing}
 
 management:
   endpoints:

@@ -3,6 +3,7 @@ package com.tbd.api_gateway.security;
 import com.tbd.api_gateway.config.JWTConfig;
 import com.tbd.api_gateway.security.jwt.JjwtReactiveJwtDecoder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -19,6 +20,9 @@ public class SecurityConfig {
 
     private final JWTConfig jwtConfig;
 
+    @Value("${spring.application.name}")
+    private String appName;
+
     @Bean
     public SecurityWebFilterChain filterChain(ServerHttpSecurity http, OAuth2LoginSuccessHandler oauth2LoginSuccessHandler) {
 
@@ -28,7 +32,7 @@ public class SecurityConfig {
                 // Set the Session Management to STATELESS
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/login/**", "/tbd/auth/refresh").permitAll()
+                        .pathMatchers("/login/**", "/tbd/" + appName + "/actuator/**", "/tbd/auth/refresh").permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2.authenticationSuccessHandler(oauth2LoginSuccessHandler))

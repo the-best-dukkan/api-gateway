@@ -5,6 +5,7 @@ import com.tbd.api_gateway.model.UserSyncRequest;
 import com.tbd.api_gateway.model.UserSyncResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,9 @@ public class UserSyncService {
 
     private final WebClient userWebClient;
 
+    @Value("${app.api.endpoint.secret}")
+    private String apiSecret;
+
     public Mono<UserSyncResponse> syncUser(OAuth2User principal) {
 
         UserSyncRequest userSyncRequest = new UserSyncRequest(
@@ -36,6 +40,7 @@ public class UserSyncService {
                 .post()
                 .uri("/api/internal/users/sync")
                 .bodyValue(userSyncRequest)
+                .header("X-Internal-Secret", apiSecret)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, clientResponse ->
                         clientResponse.bodyToMono(String.class) // Read the error body from User Service
