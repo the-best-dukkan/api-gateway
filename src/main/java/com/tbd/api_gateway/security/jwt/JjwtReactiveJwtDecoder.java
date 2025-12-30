@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
@@ -40,6 +41,6 @@ public class JjwtReactiveJwtDecoder implements ReactiveJwtDecoder {
                     Map.of("alg", "HS256", "typ", "JWT"), // Header
                     claims // Payload
             );
-        }).onErrorMap(e -> new JwtException("Invalid token: " + e.getMessage(), e));
+        }).onErrorMap(e -> new BadJwtException("Invalid token: " + e.getMessage(), e));
     }
 }

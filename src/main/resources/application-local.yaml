@@ -86,3 +86,5 @@ management:
 logging:
   level:
     org.springframework.security: DEBUG
+    org.springframework.security.web.server.util.matcher: DEBUG
+    org.springframework.security.web.server.ServerAuthenticationEntryPoint: DEBUG
