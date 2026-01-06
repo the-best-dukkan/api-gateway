@@ -25,6 +25,9 @@ spring:
     gateway:
       server:
         webflux:
+          default-filters:
+            - RemoveRequestHeader=X-Internal-Secret
+            - AddRequestHeader=X-Internal-Secret, ${TBD_INTERNAL_SECRET:default-local-secret}
           routes:
             - id: user-service-route
               uri: lb://tbd-user-service
@@ -38,9 +41,17 @@ spring:
                     redis-rate-limiter.requestedTokens: 1           # Tokens per request
                     key-resolver: "#{@commonApiKeyResolver}"        # Who is being limited
                     # “User can request 20 times at once, then 5 per second.”
-          default-filters:
-            - RemoveRequestHeader=X-Internal-Secret
-            - AddRequestHeader=X-Internal-Secret, ${TBD_INTERNAL_SECRET:default-local-secret}
+            - id: product-service-route
+              uri: lb://tbd-product-service
+              predicates:
+                - Path=/tbd/api/products/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 5
+                    redis-rate-limiter.burstCapacity: 20
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@commonApiKeyResolver}"
 server:
   port: 2030
 
