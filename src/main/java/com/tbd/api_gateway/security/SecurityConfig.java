@@ -41,7 +41,7 @@ public class SecurityConfig {
                 // Set the Session Management to STATELESS
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/login/**", "/tbd/" + appName + "/actuator/**", "/tbd/auth/refresh").permitAll()
+                        .pathMatchers("/login/**", "/tbd/" + appName + "/actuator/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -68,6 +68,7 @@ public class SecurityConfig {
                 // Set the Session Management to STATELESS
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
                 .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers("/login/**", "/tbd/" + appName + "/actuator/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2.authenticationSuccessHandler(oauth2LoginSuccessHandler))

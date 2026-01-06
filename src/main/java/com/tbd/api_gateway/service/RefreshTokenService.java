@@ -51,7 +51,7 @@ public class RefreshTokenService {
                         UserSyncResponse userSyncResponse = new UserSyncResponse(
                                 refreshTokenMetadata.getEmail(),
                                 refreshTokenMetadata.getSub(),
-                                null, false, refreshTokenMetadata.getRoles()
+                                refreshTokenMetadata.getRoles()
                         );
 
                         return Mono.just(
